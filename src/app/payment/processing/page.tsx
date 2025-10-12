@@ -1,17 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 
-export default function PaymentProcessingPage() {
-  const router = useRouter();
+function PaymentProcessingContent() {
   const searchParams = useSearchParams();
   const [progress, setProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState(0);
 
   const method = searchParams.get('method') || 'credit-card';
   const amount = searchParams.get('amount') || '0';
-  const redirectUrl = searchParams.get('redirect_url') || 'http://dubaibiglottery.ae/payelu/check_payment';
+  const redirectUrl = searchParams.get('redirect_url') || '';
 
   const steps = [
     'Validating payment details...',
@@ -50,7 +49,7 @@ export default function PaymentProcessingPage() {
       clearInterval(interval);
       clearInterval(stepInterval);
     };
-  }, []);
+  }, [redirectUrl, steps.length]);
 
   const getBankName = () => {
     switch (method) {
@@ -163,5 +162,15 @@ export default function PaymentProcessingPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PaymentProcessingPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+    </div>}>
+      <PaymentProcessingContent />
+    </Suspense>
   );
 }

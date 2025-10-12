@@ -1,13 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function PaymentSelectionPage() {
+function PaymentSelectionContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [selectedMethod, setSelectedMethod] = useState('');
-  const [amount, setAmount] = useState('');
 
   const redirectUrl = searchParams.get('redirect_url') || 'http://dubaibiglottery.ae';
 
@@ -126,5 +125,15 @@ export default function PaymentSelectionPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PaymentSelectionPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+    </div>}>
+      <PaymentSelectionContent />
+    </Suspense>
   );
 }

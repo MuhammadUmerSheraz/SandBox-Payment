@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function BankVerificationPage() {
+function BankVerificationContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [otp, setOtp] = useState('');
@@ -84,7 +84,7 @@ export default function BankVerificationPage() {
             </svg>
             <div>
               <p className="text-sm text-yellow-800 font-medium">Security Verification Required</p>
-              <p className="text-xs text-yellow-700 mt-1">We've sent a verification code to your registered mobile number ending in ****1234</p>
+              <p className="text-xs text-yellow-700 mt-1">We&apos;ve sent a verification code to your registered mobile number ending in ****1234</p>
             </div>
           </div>
         </div>
@@ -150,5 +150,15 @@ export default function BankVerificationPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function BankVerificationPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+    </div>}>
+      <BankVerificationContent />
+    </Suspense>
   );
 }
