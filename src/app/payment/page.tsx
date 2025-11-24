@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 function PaymentSelectionContent() {
@@ -8,12 +8,19 @@ function PaymentSelectionContent() {
   const searchParams = useSearchParams();
   const [selectedMethod, setSelectedMethod] = useState('');
 
-  const redirectUrl = searchParams.get('redirect_url') || 'http://dubaibiglottery.ae';
+  useEffect(() => {
+    // Store all query params in localStorage
+    const paymentData: Record<string, string> = {};
+    searchParams.forEach((value, key) => {
+      paymentData[key] = value;
+    });
+    localStorage.setItem('paymentData', JSON.stringify(paymentData));
+  }, [searchParams]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedMethod) {
-      router.push(`/payment/bank-verification?method=${selectedMethod}&amount=100&redirect_url=${encodeURIComponent(redirectUrl)}`);
+      router.push(`/payment/bank-verification?method=${selectedMethod}`);
     }
   };
 

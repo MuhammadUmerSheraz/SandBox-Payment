@@ -10,11 +10,22 @@ function PaymentProcessingContent() {
   const apiCalledRef = useRef(false);
 
   const method = searchParams.get('method') || 'credit-card';
-  const amount = searchParams.get('amount') || '0';
-  const redirectUrl = searchParams.get('redirect_url') || '';
-  const backendUrl = searchParams.get('backend_url') || '';
-  const gatewayOrderId = searchParams.get('gateway_order_id') || '';
-  const customerOrderId = searchParams.get('customer_order_id') || '';
+  
+  // Get payment data from localStorage
+  const getPaymentData = () => {
+    if (typeof window !== 'undefined') {
+      const data = localStorage.getItem('paymentData');
+      return data ? JSON.parse(data) : {};
+    }
+    return {};
+  };
+
+  const paymentData = getPaymentData();
+  const amount = paymentData.amount || '0';
+  const redirectUrl = paymentData.redirect_url || '';
+  const backendUrl = paymentData.backend_url || '';
+  const gatewayOrderId = paymentData.gateway_order_id || '';
+  const customerOrderId = paymentData.customer_order_id || '';
 
   const steps = [
     'Validating payment details...',
@@ -26,9 +37,10 @@ function PaymentProcessingContent() {
 
   useEffect(() => {
     // Call the callback API
-    const callCallbackAPI = async (): Promise<void> => {
+    const callCallbackAPI = async (): Promise<boolean> => {
       if (apiCalledRef.current || !backendUrl) {
-        return Promise.resolve();
+        console.log('API call skipped:', apiCalledRef.current ? 'Already called' : 'No backend URL');
+        return false;
       }
 
       try {
@@ -48,8 +60,9 @@ function PaymentProcessingContent() {
 
         apiCalledRef.current = true;
 
-        console.log('Calling API:', apiUrl);
-        console.log('Request Body:', requestBody);
+        console.log('🚀 API Call Started');
+        console.log('📍 API URL:', apiUrl);
+        console.log('📦 Request Body:', JSON.stringify(requestBody, null, 2));
 
         const response = await fetch(apiUrl, {
           method: 'POST',
@@ -59,22 +72,42 @@ function PaymentProcessingContent() {
           body: JSON.stringify(requestBody),
         });
 
-        console.log('API Response Status:', response.status);
+        const responseData = await response.json().catch(() => ({}));
 
-        if (!response.ok) {
-          console.error('API call failed:', response.statusText);
+        if (response.status === 200) {
+          console.log('✅ API Call SUCCESS');
+          console.log('📊 Response Status:', response.status);
+          console.log('📄 Response Data:', JSON.stringify(responseData, null, 2));
+          return true;
         } else {
-          console.log('API call successful');
+          console.error('❌ API Call FAILED');
+          console.error('📊 Response Status:', response.status);
+          console.error('📄 Response Data:', JSON.stringify(responseData, null, 2));
+          console.error('⚠️ Error Message:', response.statusText);
+          return false;
         }
       } catch (error) {
-        console.error('Error calling callback API:', error);
+        console.error('❌ API Call ERROR');
+        console.error('🔴 Error Details:', error);
+        if (error instanceof Error) {
+          console.error('🔴 Error Message:', error.message);
+          console.error('🔴 Error Stack:', error.stack);
+        }
+        return false;
       }
     };
 
     // Call API immediately on page load
-    callCallbackAPI().then(() => {
-      // Redirect to dynamic URL after API call completes (success or error)
-      window.location.href = redirectUrl;
+    callCallbackAPI().then((isSuccess) => {
+      if (isSuccess && redirectUrl) {
+        console.log('🔄 Redirecting to:', redirectUrl);
+        console.log('⏳ Waiting 5 seconds before redirect...');
+        setTimeout(() => {
+          window.location.href = redirectUrl;
+        }, 5000);
+      } else {
+        console.log('⏸️ Redirect skipped:', isSuccess ? 'No redirect URL' : 'API call failed');
+      }
     });
 
     const interval = setInterval(() => {
