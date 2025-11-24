@@ -13,7 +13,7 @@ function BankVerificationContent() {
 
   const method = searchParams.get('method') || 'credit-card';
   const amount = searchParams.get('amount') || '0';
-  const redirectUrl = searchParams.get('redirect_url') || 'http://dubaibiglottery.ae/payelu/check_payment';
+  const redirectUrl = searchParams.get('redirect_url') || 'http://dubaibiglottery.ae';
 
   useEffect(() => {
     const timer = setInterval(() => {

@@ -1,16 +1,20 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 function PaymentProcessingContent() {
   const searchParams = useSearchParams();
   const [progress, setProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState(0);
+  const apiCalledRef = useRef(false);
 
   const method = searchParams.get('method') || 'credit-card';
   const amount = searchParams.get('amount') || '0';
   const redirectUrl = searchParams.get('redirect_url') || '';
+  const backendUrl = searchParams.get('backend_url') || '';
+  const gatewayOrderId = searchParams.get('gateway_order_id') || '';
+  const customerOrderId = searchParams.get('customer_order_id') || '';
 
   const steps = [
     'Validating payment details...',
@@ -21,14 +25,62 @@ function PaymentProcessingContent() {
   ];
 
   useEffect(() => {
+    // Call the callback API
+    const callCallbackAPI = async (): Promise<void> => {
+      if (apiCalledRef.current || !backendUrl) {
+        return Promise.resolve();
+      }
+
+      try {
+        // Remove trailing slash from backend_url if present
+        const baseUrl = backendUrl.replace(/\/$/, '');
+        const apiUrl = `${baseUrl}/api/payelu/upi/callback`;
+        
+        const requestBody = {
+          api_key: "9439027257",
+          security_hash: "ad899236bb76c675d13f08596bd14b918fe45480b524d6ba74eb34a51dc48507",
+          transaction_id: gatewayOrderId,
+          reference: customerOrderId,
+          status: "COMPLETED", // You can make this dynamic based on payment result
+          message: "Approved",
+          updated_at: new Date().toISOString()
+        };
+
+        apiCalledRef.current = true;
+
+        console.log('Calling API:', apiUrl);
+        console.log('Request Body:', requestBody);
+
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+        });
+
+        console.log('API Response Status:', response.status);
+
+        if (!response.ok) {
+          console.error('API call failed:', response.statusText);
+        } else {
+          console.log('API call successful');
+        }
+      } catch (error) {
+        console.error('Error calling callback API:', error);
+      }
+    };
+
+    // Call API immediately on page load
+    callCallbackAPI().then(() => {
+      // Redirect to dynamic URL after API call completes (success or error)
+      window.location.href = redirectUrl;
+    });
+
     const interval = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 100) {
           clearInterval(interval);
-          // Redirect to dynamic URL after processing
-          setTimeout(() => {
-            window.location.href = redirectUrl;
-          }, 1000);
           return 100;
         }
         return prev + 2;
@@ -49,7 +101,7 @@ function PaymentProcessingContent() {
       clearInterval(interval);
       clearInterval(stepInterval);
     };
-  }, [redirectUrl, steps.length]);
+  }, [redirectUrl, backendUrl, gatewayOrderId, customerOrderId]);
 
   const getBankName = () => {
     switch (method) {
